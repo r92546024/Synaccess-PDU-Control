@@ -1,9 +1,6 @@
 import sys,re,urllib,socket,time
 import logging
 
-module_logger = logging.getLogger('ControlPDU')
-
-
 class ControlPDU(object):
     __PDUIP = None
     __NumberOfPort = None
@@ -14,12 +11,6 @@ class ControlPDU(object):
 
 
     def __init__(self,IP=None):
-        if __name__ == "__main__":
-            from LogOutput import Setlogger
-            self.logger = Setlogger(__name__, __file__+'.log' , logging.DEBUG)
-        else:
-            self.logger = logging.getLogger('ControlPDU')
-
         self.logger.debug('ControlPDU_Class __init__')
         if IP !=None:
             self.PDUIP=IP
@@ -46,7 +37,6 @@ class ControlPDU(object):
             self.logger.info('NumberOfDUTPort={}'.format(value))
         else:
             self.logger.error('please assign NumberOfDUTPort={} to integer'.format(self.__NumberOfPort))
-            #print ('please assign NumberOfDUTPort={} to integer'.format(self.__NumberOfPort))
 
     @property
     def DUTID(self):
@@ -59,7 +49,6 @@ class ControlPDU(object):
             self.logger.info('DUTID={}'.format(value))
         else:
             self.logger.error('please assign DUTID={} to integer'.format(self.__DUTID))
-            #print ('please assign DUTID={} to integer'.format(self.__DUTID))
 
     @staticmethod
     def RepresentsInt(s):
@@ -120,8 +109,7 @@ class ControlPDU(object):
                     response = urllib.urlopen(url)
                     time.sleep(1)
                     PDUResponse = response.read()
-
-                    # print (ControlPDU.GetParserPDUInfo(self.__PDUIP, 'all'))
+                    
                     while PDUPortResult == switch:
                         PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,\d{%s}(\d)\d*,' % (portN - 1))
                         time.sleep(1)
@@ -149,7 +137,6 @@ class ControlPDU(object):
                     time.sleep(1)
                     PDUResponse = response.read()
 
-                    # print (ControlPDU.GetParserPDUInfo(self.__PDUIP, 'all'))
                     while PDUPortResult == '':
                         if switch == 1:
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([1]{8,16}),')
