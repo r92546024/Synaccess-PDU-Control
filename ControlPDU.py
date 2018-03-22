@@ -3,12 +3,8 @@ import logging
 
 class ControlPDU(object):
     __PDUIP = None
-    __NumberOfPort = None
     __DUTID = None
-    __PDUFolder = None
     __NumberOfPort = None
-    __JobFolderPath = None
-
 
     def __init__(self,IP=None):
         self.logger.debug('ControlPDU_Class __init__')
@@ -110,7 +106,7 @@ class ControlPDU(object):
                     time.sleep(1)
                     PDUResponse = response.read()
                     
-                    while PDUPortResult == switch:
+                    while PDUPortResult == switch: #Parser to check if the port already be ON or OFF
                         PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,\d{%s}(\d)\d*,' % (portN - 1))
                         time.sleep(1)
                     Retry += 1
@@ -138,9 +134,9 @@ class ControlPDU(object):
                     PDUResponse = response.read()
 
                     while PDUPortResult == '':
-                        if switch == 1:
+                        if switch == 1: #Parser to check if the All port already be ON
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([1]{8,16}),')
-                        elif switch == 0:
+                        elif switch == 0: #Parser to check if the All port already be OFF
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([0]{8,16}),')
                         time.sleep(1)
                     Retry += 1
