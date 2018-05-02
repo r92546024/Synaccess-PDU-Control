@@ -4,8 +4,7 @@ For Power Distribution Unit , the script can control Power ON ,Power OFF or get 
 
     from ControlDUT import  *
 
-    PDU = ControlPDU()
-    PDU.PDUIP = '192.168.1.100'  #PDU IP address for access
+    PDU = ControlPDU('192.168.1.100')  #PDU IP address for access
     
     PDU.PortPowerControl(1,1) # Port 1 ON
     PDU.PortPowerControl(1,0) # Port 1 OFF
@@ -14,4 +13,5 @@ For Power Distribution Unit , the script can control Power ON ,Power OFF or get 
     PDU.AllPortPowerControl(1) # All Port ON
     PDU.AllPortPowerControl(0) # All Port OFF
     
-    
+# Video Example
+https://youtu.be/D68fOSl2Xos
