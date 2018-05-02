@@ -7,9 +7,15 @@ class ControlPDU(object):
     __NumberOfPort = None
 
     def __init__(self,IP=None):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('ControlPDU')
         self.logger.setLevel(logging.DEBUG)
+
         sh = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '[%(asctime)s][%(levelname)s] [%(threadName)s] %(message)s [%(filename)s line:%(lineno)d][%(name)s]'
+            , datefmt="%Y-%m-%d %H:%M:%S")
+        sh.setFormatter(formatter)
+
         self.logger.addHandler(sh)
 
         if IP !=None:
@@ -107,6 +113,7 @@ class ControlPDU(object):
             Retry = 0
 
             try:
+                self.logger.info('PDU Port{} Switch={}'.format(portN, switch))
                 while (Retry < PDURetryTimes and PDUResponse != '$A0' and PDUPortResult == ''):
                     try: ## Using request - for Python 3.x
                         response = requests.post(url)
@@ -121,7 +128,7 @@ class ControlPDU(object):
                         PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,\d{%s}(\d)\d*,' % (portN - 1))
                         time.sleep(1)
                     Retry += 1
-                self.logger.info('PDU Port{} Switch={}'.format(portN,switch))
+
             except :
                 self.logger.error('PDUIP {} is unstable connection, please reset PDU'.format(self.PDUIP))
         else:
@@ -133,14 +140,14 @@ class ControlPDU(object):
         if self.__PDUIP != None:
             url = 'http://admin:admin@{0}/cmd.cgi?$A7%20{1}'.format(self.__PDUIP, switch)
 
-            PDURetryTimes = 3
+            PDURetryTimes = 16
             PDUResponse =''
             PDUPortResult = ''
             Retry = 0
 
             try:
+                self.logger.info('PDU Start AllPort switch={}'.format(switch))
                 while (Retry < PDURetryTimes and PDUResponse != '$A0' and PDUPortResult == ''):
-
                     try: ## Using request - for Python 3.x
                         response = requests.post(url)
                         time.sleep(1)
@@ -150,7 +157,6 @@ class ControlPDU(object):
                         time.sleep(1)
                         PDUResponse = response.read()
 
-                    # print (ControlPDU.GetParserPDUInfo(self.__PDUIP, 'all'))
                     while PDUPortResult == '':
                         if switch == 1:
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([1]{8,16}),')
@@ -158,7 +164,9 @@ class ControlPDU(object):
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([0]{8,16}),')
                         time.sleep(1)
                     Retry += 1
-                self.logger.info('PDU AllPort witch={}'.format(portN, switch))
+
+                self.logger.info('PDU End AllPort switch={}'.format(switch))
+
             except :
                 self.logger.error('PDUIP {} is unstable connection, please reset PDU'.format(self.PDUIP) )
 
@@ -203,7 +211,7 @@ if __name__ == "__main__":
     PDU.PortPowerControl(2, 1)
     PDU.PortPowerControl(2, 0)
     PDU.PortPowerControl(2, 1)
-    
+
     PDU.PortPowerControl(3, 0)
     PDU.PortPowerControl(3, 1)
     PDU.PortPowerControl(3, 0)
