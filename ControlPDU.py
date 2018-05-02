@@ -1,4 +1,4 @@
-import sys,re,urllib,socket,time
+import sys,re,urllib,socket,time,requests
 import logging
 
 class ControlPDU(object):
@@ -7,7 +7,11 @@ class ControlPDU(object):
     __NumberOfPort = None
 
     def __init__(self,IP=None):
-        self.logger.debug('ControlPDU_Class __init__')
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        sh = logging.StreamHandler()
+        self.logger.addHandler(sh)
+
         if IP !=None:
             self.PDUIP=IP
 
@@ -66,17 +70,18 @@ class ControlPDU(object):
 
     @staticmethod
     def GetParserPDUInfo(IP, pattern):
-        # Using request - for Python 3.x
-        # import re,request
-        # url = 'http://%s/cmd.cgi?$A5' %IP
-        # response = requests.post(url)
-        # text = response.text
+        url = 'http://admin:admin@{0}/cmd.cgi?$A5'.format(IP)
 
-        # Using urllib - for Python 2.7
-        import re, urllib
-        url = 'http://admin:admin@%s/cmd.cgi?$A5' % IP
-        response = urllib.urlopen(url)
-        text = response.read()
+        try:
+            ## Using request - for Python 3.x
+            ##import requests
+            response = requests.post(url)
+            text = response.text
+        except:
+            ## Using urllib - for Python 2.7
+            ##import urllib
+            response = urllib.urlopen(url)
+            text = response.read()
 
         if pattern != 'all':
             PaserResult = re.findall(pattern, text)
@@ -89,10 +94,11 @@ class ControlPDU(object):
     def GetPDUStatusInfo(self):
         return self.GetParserPDUInfo(self.__PDUIP,'all')
 
+    def debug(self):
+        self.logger.debug('it is debug')
 
     def PortPowerControl(self,portN,switch):
         if self.__PDUIP != None:
-            import re, urllib, time
             url = 'http://admin:admin@{0}/cmd.cgi?$A3%20{1}%20{2}'.format(self.__PDUIP, portN, switch)
 
             PDURetryTimes = 3
@@ -102,14 +108,20 @@ class ControlPDU(object):
 
             try:
                 while (Retry < PDURetryTimes and PDUResponse != '$A0' and PDUPortResult == ''):
-                    response = urllib.urlopen(url)
-                    time.sleep(1)
-                    PDUResponse = response.read()
-                    
-                    while PDUPortResult == switch: #Parser to check if the port already be ON or OFF
+                    try: ## Using request - for Python 3.x
+                        response = requests.post(url)
+                        time.sleep(1)
+                        PDUResponse = response.text
+                    except: ## Using urllib - for Python 2.7
+                        response = urllib.urlopen(url)
+                        time.sleep(1)
+                        PDUResponse = response.read()
+
+                    while PDUPortResult == switch:
                         PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,\d{%s}(\d)\d*,' % (portN - 1))
                         time.sleep(1)
                     Retry += 1
+                self.logger.info('PDU Port{} Switch={}'.format(portN,switch))
             except :
                 self.logger.error('PDUIP {} is unstable connection, please reset PDU'.format(self.PDUIP))
         else:
@@ -119,7 +131,6 @@ class ControlPDU(object):
 
     def AllPortPowerControl (self, switch):
         if self.__PDUIP != None:
-            import re, urllib, time
             url = 'http://admin:admin@{0}/cmd.cgi?$A7%20{1}'.format(self.__PDUIP, switch)
 
             PDURetryTimes = 3
@@ -129,17 +140,25 @@ class ControlPDU(object):
 
             try:
                 while (Retry < PDURetryTimes and PDUResponse != '$A0' and PDUPortResult == ''):
-                    response = urllib.urlopen(url)
-                    time.sleep(1)
-                    PDUResponse = response.read()
 
+                    try: ## Using request - for Python 3.x
+                        response = requests.post(url)
+                        time.sleep(1)
+                        PDUResponse = response.text
+                    except: ## Using urllib - for Python 2.7
+                        response = urllib.urlopen(url)
+                        time.sleep(1)
+                        PDUResponse = response.read()
+
+                    # print (ControlPDU.GetParserPDUInfo(self.__PDUIP, 'all'))
                     while PDUPortResult == '':
-                        if switch == 1: #Parser to check if the All port already be ON
+                        if switch == 1:
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([1]{8,16}),')
-                        elif switch == 0: #Parser to check if the All port already be OFF
+                        elif switch == 0:
                             PDUPortResult = ControlPDU.GetParserPDUInfo(self.__PDUIP, '.+,([0]{8,16}),')
                         time.sleep(1)
                     Retry += 1
+                self.logger.info('PDU AllPort witch={}'.format(portN, switch))
             except :
                 self.logger.error('PDUIP {} is unstable connection, please reset PDU'.format(self.PDUIP) )
 
@@ -148,6 +167,7 @@ class ControlPDU(object):
             self.logger.error("Please Check if script already assign value by .PDUIP , .DUTID , .NumberOfDUTPort")
 
     def PowerOn(self):
+
         if self.__NumberOfPort!=None and  self.__PDUIP!=None and self.__DUTID!=None :
             EndPort = self.DUTID*self.__NumberOfPort+1
             StarPort = EndPort - self.__NumberOfPort
@@ -174,16 +194,9 @@ class ControlPDU(object):
 
 
 if __name__ == "__main__":
-    from ControlDUT import  *
 
-    PDU = ControlPDU()
-    PDU.PDUIP = '192.168.1.100'
-    PDU.DUTID= 1
-    PDU.NumberOfDUTPort= 1
-    PDU.PowerOff()
-    PDU.PowerOn()
+    PDU = ControlPDU('192.168.1.101')
 
-    print PDU.GetPDUStatusInfo()
     PDU.PortPowerControl(1, 0)
     PDU.PortPowerControl(1, 1)
     PDU.PortPowerControl(2, 0)
@@ -198,5 +211,11 @@ if __name__ == "__main__":
     
     PDU.AllPortPowerControl(0)
     PDU.AllPortPowerControl(1)
+
+    # PDU.DUTID= 1
+    # PDU.NumberOfDUTPort= 1
+    # PDU.PowerOff()
+    # PDU.PowerOn()
+    # print (PDU.GetPDUStatusInfo())
 
 
