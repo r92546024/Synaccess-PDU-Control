@@ -15,3 +15,5 @@ For Power Distribution Unit , the script can control Power ON ,Power OFF or get 
     
 # Video Example
 https://youtu.be/D68fOSl2Xos
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/D68fOSl2Xos/0.jpg)](https://www.youtube.com/watch?v=D68fOSl2Xos)
